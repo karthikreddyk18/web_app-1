@@ -1,0 +1,22 @@
+packages:
+  "framer-motion": "For premium page transitions, card reveals, and smooth interactions"
+  "recharts": "For the weekly study activity analytics graph"
+  "date-fns": "For formatting enrolled dates and activity days"
+  "lucide-react": "For crisp, consistent iconography across the platform"
+  "react-hook-form": "For robust form state management"
+  "@hookform/resolvers": "For Zod schema validation in forms"
+  "clsx": "For conditional tailwind class merging"
+  "tailwind-merge": "For resolving tailwind class conflicts"
+
+images:
+  - path: "artifacts/course-platform/public/images/hero-bg.png"
+    description: "A dark, sleek abstract gradient mesh background featuring deep deep indigo (hex #0F0C29), vibrant neon purple (hex #8A2BE2), and subtle cyan light leaks. High tech, premium, professional aesthetic for a modern learning platform."
+    aspect_ratio: "16:9"
+  - path: "artifacts/course-platform/public/images/logo.png"
+    description: "A minimal, modern geometric logo mark for a tech education platform. Composed of intersecting abstract shapes forming a stylized 'C' or play button, glowing in neon cyan and purple against a transparent background."
+    aspect_ratio: "1:1"
+
+notes:
+  - App relies on generated OpenAPI hooks from @workspace/api-client-react
+  - Authentication expects standard JWT Bearer token in headers
+  - UI strictly adheres to a premium dark mode aesthetic
