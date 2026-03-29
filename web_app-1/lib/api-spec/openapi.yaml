@@ -1,0 +1,632 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Course Enrollment & Progress Tracking API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: courses
+    description: Course management
+  - name: enrollments
+    description: Enrollment and progress tracking
+  - name: users
+    description: User management
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /courses:
+    get:
+      operationId: listCourses
+      tags: [courses]
+      summary: List all available courses
+      responses:
+        "200":
+          description: List of courses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Course"
+
+    post:
+      operationId: createCourse
+      tags: [courses]
+      summary: Create a new course (Instructor only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCourseRequest"
+      responses:
+        "201":
+          description: Course created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /courses/{courseId}:
+    get:
+      operationId: getCourse
+      tags: [courses]
+      summary: Get a course by ID
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Course details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+        "404":
+          description: Course not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /enrollments:
+    get:
+      operationId: getMyEnrollments
+      tags: [enrollments]
+      summary: Get current user's enrollments with progress
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of enrollments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Enrollment"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /enrollments/{courseId}:
+    post:
+      operationId: enrollInCourse
+      tags: [enrollments]
+      summary: Enroll in a course
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "201":
+          description: Enrolled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Enrollment"
+        "409":
+          description: Already enrolled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /enrollments/{courseId}/lessons/{lessonId}/complete:
+    post:
+      operationId: completeLesson
+      tags: [enrollments]
+      summary: Mark a lesson as complete and update progress
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Progress updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Enrollment"
+        "404":
+          description: Enrollment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /enrollments/{courseId}/progress:
+    get:
+      operationId: getCourseProgress
+      tags: [enrollments]
+      summary: Get progress for a specific enrolled course
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Enrollment with progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Enrollment"
+        "404":
+          description: Not enrolled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/activity:
+    get:
+      operationId: getWeeklyActivity
+      tags: [users]
+      summary: Get current user's weekly study activity
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Weekly activity data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DayActivity"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/stats:
+    get:
+      operationId: getUserStats
+      tags: [users]
+      summary: Get current user's overall stats
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserStats"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    RegisterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        role:
+          type: string
+          enum: [student, instructor]
+      required:
+        - name
+        - email
+        - password
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserProfile"
+      required:
+        - token
+        - user
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [student, instructor]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - email
+        - role
+        - createdAt
+
+    Lesson:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        videoUrl:
+          type: string
+        duration:
+          type: integer
+          description: Duration in seconds
+        order:
+          type: integer
+      required:
+        - id
+        - title
+        - videoUrl
+        - order
+
+    Module:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        order:
+          type: integer
+        lessons:
+          type: array
+          items:
+            $ref: "#/components/schemas/Lesson"
+      required:
+        - id
+        - title
+        - order
+        - lessons
+
+    Course:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        thumbnail:
+          type: string
+        level:
+          type: string
+          enum: [beginner, intermediate, advanced]
+        category:
+          type: string
+        totalLessons:
+          type: integer
+        instructor:
+          $ref: "#/components/schemas/UserProfile"
+        modules:
+          type: array
+          items:
+            $ref: "#/components/schemas/Module"
+        createdAt:
+          type: string
+          format: date-time
+        enrolledCount:
+          type: integer
+      required:
+        - id
+        - title
+        - description
+        - level
+        - category
+        - totalLessons
+        - instructor
+        - modules
+        - createdAt
+        - enrolledCount
+
+    CreateCourseRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        thumbnail:
+          type: string
+        level:
+          type: string
+          enum: [beginner, intermediate, advanced]
+        category:
+          type: string
+        modules:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+              lessons:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    title:
+                      type: string
+                    videoUrl:
+                      type: string
+                    duration:
+                      type: integer
+                  required:
+                    - title
+                    - videoUrl
+            required:
+              - title
+              - lessons
+      required:
+        - title
+        - description
+        - level
+        - category
+        - modules
+
+    Enrollment:
+      type: object
+      properties:
+        id:
+          type: integer
+        studentId:
+          type: integer
+        courseId:
+          type: integer
+        course:
+          $ref: "#/components/schemas/Course"
+        completedLessons:
+          type: array
+          items:
+            type: integer
+        progressPercentage:
+          type: number
+        enrolledAt:
+          type: string
+          format: date-time
+        lastAccessedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - studentId
+        - courseId
+        - course
+        - completedLessons
+        - progressPercentage
+        - enrolledAt
+
+    DayActivity:
+      type: object
+      properties:
+        day:
+          type: string
+        lessonsCompleted:
+          type: integer
+        minutesStudied:
+          type: integer
+      required:
+        - day
+        - lessonsCompleted
+        - minutesStudied
+
+    UserStats:
+      type: object
+      properties:
+        totalEnrolled:
+          type: integer
+        totalCompleted:
+          type: integer
+        totalInProgress:
+          type: integer
+        totalLessonsCompleted:
+          type: integer
+        averageProgress:
+          type: number
+        streakDays:
+          type: integer
+      required:
+        - totalEnrolled
+        - totalCompleted
+        - totalInProgress
+        - totalLessonsCompleted
+        - averageProgress
+        - streakDays
